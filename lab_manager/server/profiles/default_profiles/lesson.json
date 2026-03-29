@@ -1,0 +1,5 @@
+{
+  "disable_animations": true,
+  "kill_processes": ["chrome", "firefox"],
+  "block_sites": ["facebook.com", "youtube.com"]
+}

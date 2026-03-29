@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+pyqt6
+psutil
+httpx
+pydantic
+reportlab
+python-multipart
+websockets
