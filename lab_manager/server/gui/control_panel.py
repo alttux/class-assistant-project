@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QComboBox, QSpinBox, QMessageBox
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import QThread, pyqtSignal
 import requests
-from shared import constants, schemas
+from shared import constants
 from ..api_client import APIClient
 
 class CommandThread(QThread):
@@ -16,7 +16,7 @@ class CommandThread(QThread):
 
     def run(self):
         try:
-            url = f"http://localhost:{constants.DEFAULT_PORT}/command/{self.ip}"
+            url = f"http://{self.ip}:{constants.DEFAULT_PORT}/command/{self.ip}"
             headers = {"Authorization": f"Bearer {constants.AUTH_TOKEN}"}
             data = {"command": self.command}
             if self.params:
@@ -35,7 +35,7 @@ class ControlPanel(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.api_client = APIClient("http://localhost:8000")
+        self.api_client = APIClient(f"http://{constants.SERVER_IP}:{constants.DEFAULT_PORT}")
         self.init_ui()
         
     def init_ui(self):
@@ -55,6 +55,13 @@ class ControlPanel(QWidget):
         station_layout.addStretch()
         layout.addLayout(station_layout)
         
+        # Хранилище IP адресов
+        self.workstations_ips = {
+            "ПК1": "192.168.1.10",
+            "ПК2": "192.168.1.11",
+            "ПК3": "192.168.1.12"
+        }
+
         # Группа команд: Система
         layout.addWidget(QLabel("📋 Системные команды:"))
         system_layout = QHBoxLayout()
@@ -111,10 +118,10 @@ class ControlPanel(QWidget):
         selected = self.station_combo.currentText()
         
         if selected == "Все ПК":
-            ips = ["192.168.1.10", "192.168.1.11", "192.168.1.12"]
+            ips = list(self.workstations_ips.values())
         else:
-            ips = ["192.168.1.10"]  # Пример IP
-        
+            ips = [self.workstations_ips.get(selected, "192.168.1.10")]
+
         for ip in ips:
             thread = CommandThread(ip, command)
             thread.finished.connect(self.on_command_finished)
@@ -139,6 +146,25 @@ class ControlPanel(QWidget):
         """Обработать результат команды"""
         self.status_label.setText(message)
     
+    def update_workstations(self, agent_ips: list):
+        """Обновить список рабочих станций на основе найденных агентов"""
+        self.workstations_ips.clear()
+        for idx, ip in enumerate(agent_ips, 1):
+            pc_name = f"ПК{idx}"
+            self.workstations_ips[pc_name] = ip
+
+        # Обновить комбобокс
+        current_items = [self.station_combo.itemText(i) for i in range(self.station_combo.count())]
+        pc_items = list(self.workstations_ips.keys())
+
+        if set(current_items[1:]) != set(pc_items):  # Пропускаем "Все ПК"
+            self.station_combo.clear()
+            self.station_combo.addItem("Все ПК")
+            for pc_name in pc_items:
+                self.station_combo.addItem(pc_name)
+
+            self.status_label.setText(f"✅ Обновлено. Найдено {len(agent_ips)} ПК")
+
     def get_pid_input(self):
         """Получить PID процесса"""
         spin = QSpinBox()

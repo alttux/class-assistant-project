@@ -2,14 +2,13 @@ import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QListWidget, QHBoxLayout
 from PyQt6.QtCore import QThread
 import uvicorn
-import asyncio
-from .api import app
+from .api import app as fastapi_app
 from .api_client import APIClient
 from shared import constants, schemas
 
 class ServerThread(QThread):
     def run(self):
-        uvicorn.run(app, host="0.0.0.0", port=constants.DEFAULT_PORT)
+        uvicorn.run(fastapi_app, host=constants.SERVER_HOST, port=constants.DEFAULT_PORT)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,7 +16,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Classroom Manager")
         self.setGeometry(100, 100, 800, 600)
 
-        self.api_client = APIClient("http://localhost:8000")  # Assuming local for now
+        self.api_client = APIClient(f"http://{constants.SERVER_IP}:{constants.DEFAULT_PORT}")
 
         layout = QVBoxLayout()
 
@@ -72,7 +71,7 @@ class MainWindow(QMainWindow):
         await self.api_client.send_command(ip, cmd)
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    qt_app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())
+    sys.exit(qt_app.exec())

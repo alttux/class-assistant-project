@@ -1,8 +1,8 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QPushButton, QLabel, QStatusBar, QMenuBar, QMenu)
-from PyQt6.QtCore import QThread, QTimer, Qt
-from PyQt6.QtGui import QIcon, QFont, QColor
+                             QHBoxLayout, QPushButton, QLabel, QMenuBar, QMenu)
+from PyQt6.QtCore import QThread, QTimer
+from PyQt6.QtGui import QFont
 from PyQt6.QtCore import pyqtSignal
 import uvicorn
 import threading
@@ -12,6 +12,7 @@ from .control_panel import ControlPanel
 from .profile_panel import ProfilePanel
 from .reports_panel import ReportsPanel
 from ..api import app
+from ..network_discovery import discover_agents_sync
 from shared import constants
 
 class ServerThread(QThread):
@@ -148,8 +149,8 @@ class TeacherMainWindow(QMainWindow):
             # Запустить таймер обновления
             self.timer.start(5000)  # Обновлять каждые 5 секунд
             
-            self.statusBar().showMessage("Сервер запущен на http://localhost:8000")
-    
+            self.statusBar().showMessage(f"Сервер запущен на http://{constants.SERVER_IP}:{constants.DEFAULT_PORT}")
+
     def stop_server(self):
         """Остановить сервер"""
         if self.server_running:
@@ -187,9 +188,25 @@ class TeacherMainWindow(QMainWindow):
     def discover_agents(self):
         """Найти активные агенты в сети"""
         self.statusBar().showMessage("🔍 Поиск агентов в сети...")
-        # Реализация в следующей версии
-        self.statusBar().showMessage("Поиск: функция в разработке")
-    
+
+        # Запустить поиск в отдельном потоке
+        def search_agents():
+            try:
+                agents = discover_agents_sync()
+                if agents:
+                    agent_list = "\n".join(agents)
+                    self.statusBar().showMessage(f"✅ Найдено {len(agents)} агентов:\n{agent_list}")
+                    # Обновить список в control_panel
+                    self.control_panel.update_workstations(agents)
+                else:
+                    self.statusBar().showMessage("❌ Агенты не найдены. Проверьте сетевое подключение.")
+            except Exception as e:
+                self.statusBar().showMessage(f"❌ Ошибка при поиске: {str(e)}")
+
+        import threading
+        thread = threading.Thread(target=search_agents, daemon=True)
+        thread.start()
+
     def show_about(self):
         """Показать информацию о приложении"""
         about_text = """

@@ -1,0 +1,8 @@
+{
+  "port": 8000,
+  "host": "0.0.0.0",
+  "token": "secret_token",
+  "network_interface": "0.0.0.0",
+  "description": "Server configuration for Classroom Manager. Set listen address to 0.0.0.0 to accept connections from any network interface."
+}
+

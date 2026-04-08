@@ -1,4 +1,6 @@
 {
   "port": 8001,
-  "token": "secret_token"
+  "token": "secret_token",
+  "server_url": "http://192.168.1.1:8000",
+  "listen_address": "0.0.0.0"
 }

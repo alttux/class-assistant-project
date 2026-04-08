@@ -1,13 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from .db import database, crud, models
+from .db import database, crud
 from .api_client import APIClient
 from .profiles.profile_engine import ProfileEngine
 from .reports.report_generator import generate_usage_report
 from .reports.pdf_exporter import export_report_to_pdf
 from shared import schemas, constants
 import uvicorn
-import asyncio
 
 app = FastAPI(title="Classroom Manager Server")
 
@@ -19,7 +18,7 @@ def get_db():
     finally:
         db.close()
 
-api_client = APIClient("http://localhost:8000")  # Adjust
+api_client = APIClient(f"http://{constants.SERVER_IP}:{constants.DEFAULT_PORT}")
 profile_engine = ProfileEngine(api_client)
 
 @app.get("/workstations/", response_model=list[schemas.Workstation])
@@ -72,4 +71,4 @@ def export_report(workstation_id: int = None, db: Session = Depends(get_db)):
     return {"status": "exported"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=constants.DEFAULT_PORT)
+    uvicorn.run(app, host=constants.SERVER_HOST, port=constants.DEFAULT_PORT)
