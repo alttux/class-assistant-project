@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QComboBox, QSpinBox, QMessageBox
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import requests
-import asyncio
 from shared import constants, schemas
 from ..api_client import APIClient
 
@@ -9,17 +8,25 @@ class CommandThread(QThread):
     """Поток для выполнения команд асинхронно"""
     finished = pyqtSignal(str)
     
-    def __init__(self, api_client, ip, command):
+    def __init__(self, ip, command, params=None):
         super().__init__()
-        self.api_client = api_client
         self.ip = ip
         self.command = command
-    
+        self.params = params
+
     def run(self):
         try:
-            cmd = schemas.CommandRequest(command=self.command)
-            result = asyncio.run(self.api_client.send_command(self.ip, cmd))
-            self.finished.emit(f"✅ {self.command}: {result.get('status', 'ok')}")
+            url = f"http://localhost:{constants.DEFAULT_PORT}/command/{self.ip}"
+            headers = {"Authorization": f"Bearer {constants.AUTH_TOKEN}"}
+            data = {"command": self.command}
+            if self.params:
+                data["params"] = self.params
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code == 200:
+                result = response.json()
+                self.finished.emit(f"✅ {self.command}: {result.get('status', 'ok')}")
+            else:
+                self.finished.emit(f"❌ HTTP {response.status_code}: {response.text}")
         except Exception as e:
             self.finished.emit(f"❌ Ошибка: {str(e)}")
 
@@ -109,7 +116,7 @@ class ControlPanel(QWidget):
             ips = ["192.168.1.10"]  # Пример IP
         
         for ip in ips:
-            thread = CommandThread(self.api_client, ip, command)
+            thread = CommandThread(ip, command)
             thread.finished.connect(self.on_command_finished)
             thread.start()
     
@@ -121,16 +128,13 @@ class ControlPanel(QWidget):
     
     def send_command_with_params(self, command, params):
         """Отправить команду с параметрами"""
-        try:
-            selected = self.station_combo.currentText()
-            ip = "192.168.1.10"  # Пример
-            
-            cmd = schemas.CommandRequest(command=command, params=params)
-            asyncio.run(self.api_client.send_command(ip, cmd))
-            self.status_label.setText(f"✅ Команда {command} выполнена")
-        except Exception as e:
-            self.status_label.setText(f"❌ Ошибка: {str(e)}")
-    
+        selected = self.station_combo.currentText()
+        ip = "192.168.1.10"  # Пример
+
+        thread = CommandThread(ip, command, params)
+        thread.finished.connect(self.on_command_finished)
+        thread.start()
+
     def on_command_finished(self, message):
         """Обработать результат команды"""
         self.status_label.setText(message)
@@ -145,4 +149,3 @@ class ControlPanel(QWidget):
         dialog.setText("Введите PID процесса:")
         # Упрощенный вариант - просто возвращаем значение
         return 1234, True
-
