@@ -12,6 +12,10 @@ BASE_URL = "http://localhost:8000"
 AGENT_URL = "http://localhost:8001"
 AUTH_TOKEN = "secret_token"
 
+# Default test data (will be updated with unique names)
+workstation_data = {}
+profile_data = {}
+
 def print_section(title):
     print(f"\n{'='*60}")
     print(f"  {title}")
@@ -28,11 +32,6 @@ def test_workstations():
     
     # Create a new workstation
     print("\n2. Creating a new workstation...")
-    workstation_data = {
-        "name": "PC2",
-        "ip_address": "192.168.1.11",
-        "status": "offline"
-    }
     response = requests.post(f"{BASE_URL}/workstations/", json=workstation_data)
     print(f"   Status: {response.status_code}")
     print(f"   Data: {json.dumps(response.json(), indent=2)}")
@@ -54,11 +53,6 @@ def test_profiles():
     
     # Create a new profile
     print("\n2. Creating a new profile...")
-    profile_data = {
-        "name": "exam",
-        "description": "Exam profile - strict settings",
-        "settings": {"disable_internet": True, "kill_processes": ["chrome", "firefox"]}
-    }
     response = requests.post(f"{BASE_URL}/profiles/", json=profile_data)
     print(f"   Status: {response.status_code}")
     print(f"   Data: {json.dumps(response.json(), indent=2)}")
@@ -131,6 +125,22 @@ def main():
     print("  CLASSROOM MANAGER - COMPREHENSIVE TEST SUITE")
     print("="*60)
     
+    # Generate unique names for testing
+    timestamp = str(int(time.time()))
+    
+    # Update test data with unique names
+    global workstation_data, profile_data
+    workstation_data = {
+        "name": f"PC_test_{timestamp}",
+        "ip_address": f"192.168.1.{100 + int(timestamp[-2:]) % 100}",
+        "status": "offline"
+    }
+    profile_data = {
+        "name": f"test_profile_{timestamp}",
+        "description": "Test profile for testing",
+        "settings": {"disable_animations": True, "block_sites": ["test.com"]}
+    }
+    
     try:
         test_workstations()
         test_profiles()
@@ -151,4 +161,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

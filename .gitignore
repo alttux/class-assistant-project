@@ -1,1 +1,10 @@
 .idea/
+lab_manager/.DS_Store
+.DS_Store
+lab_manager/ClassroomManager_macOS.zip
+lab_manager/build_macos/
+lab_manager/dist_macos/
+lab_manager/server/gui/__pycache__/
+ lab_manager/agent/__pycache__/
+ lab_manager/report.pdf
+ lab_manager/classroom.db
