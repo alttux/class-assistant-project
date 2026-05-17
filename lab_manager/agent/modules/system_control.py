@@ -5,7 +5,7 @@ def lock_screen():
     if platform.system() == "Windows":
         subprocess.run(["rundll32.exe", "user32.dll,LockWorkStation"])
     elif platform.system() == "Linux":
-        subprocess.run(["xdg-screensaver", "lock"])
+        subprocess.run(["loginctl", "lock-session"])
     elif platform.system() == "Darwin":  # macOS
         subprocess.run(["pmset", "displaysleepnow"])
 
